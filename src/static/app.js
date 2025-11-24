@@ -21,10 +21,16 @@ document.addEventListener("DOMContentLoaded", () => {
         const spotsLeft = details.max_participants - details.participants.length;
 
         activityCard.innerHTML = `
-          <h4>${name}</h4>
-          <p>${details.description}</p>
-          <p><strong>Schedule:</strong> ${details.schedule}</p>
-          <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
+          <div class="card-head">
+            <h3 class="activity-title">${esc(name)}</h3>
+            <span class="activity-count" title="Number of participants">${details.participants.length}</span>
+          </div>
+          <p class="activity-desc">${esc(details.description)}</p>
+          <p class="activity-schedule"><strong>Schedule:</strong> ${esc(details.schedule)}</p>
+          <section class="activity-participants">
+            <h4 class="participants-heading">Participants</h4>
+            ${participantsHtml(details.participants)}
+          </section>
         `;
 
         activitiesList.appendChild(activityCard);
@@ -83,4 +89,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Initialize app
   fetchActivities();
+
+  function esc(s) {
+    return String(s || '').replace(/[&<>"']/g, c => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    }[c]));
+  }
+
+  function participantsHtml(participants) {
+    const escapedParticipants = participants.map(p => esc(p));
+    return escapedParticipants.length
+      ? '<ul class="participants-list">' + escapedParticipants.map(p => `<li>${p}</li>`).join('') + '</ul>'
+      : '<div class="participants-empty">No participants yet</div>';
+  }
 });

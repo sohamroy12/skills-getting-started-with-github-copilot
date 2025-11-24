@@ -215,3 +215,55 @@ footer {
 .error {
   color: #b91c1c;
 }
+
+.activity-participants {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(15, 23, 42, 0.04);
+}
+
+.participants-heading {
+  margin: 0 0 8px 0;
+  font-size: 0.95rem;
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.participants-list {
+  list-style: disc inside;
+  margin: 0;
+  padding: 0;
+  color: #0b1220;
+  font-size: 0.95rem;
+}
+
+.participants-list li {
+  padding: 6px 0;
+  border-bottom: 1px dashed rgba(15, 23, 42, 0.04);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Fallback when no participants exist */
+.participants-empty {
+  color: #6b7280;
+  font-style: italic;
+  padding: 4px 0;
+}
+
+/* small badge with count */
+.activity-count {
+  background: linear-gradient(90deg, #2563eb, #7c3aed);
+  color: #fff;
+  padding: 5px 8px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  box-shadow: 0 6px 18px rgba(16, 24, 40, 0.08);
+}
+
+/* optional tweak: card class alignment */
+.activity-card {
+  /* if your cards use a different selector, merge accordingly */
+}
