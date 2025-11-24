@@ -39,6 +39,10 @@
         </form>
         <div id="message" class="hidden"></div>
       </section>
+
+      <section id="activities" class="grid">
+        <!-- activity cards will be injected here by app.js -->
+      </section>
     </main>
 
     <footer>
@@ -46,5 +50,48 @@
     </footer>
 
     <script src="app.js"></script>
+    <script>
+      // Simple HTML escaper to avoid injection
+      function esc(s){ return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+      async function loadActivities(){
+        try{
+          const res = await fetch('/activities');
+          if(!res.ok) throw new Error('Failed to load activities');
+          const data = await res.json();
+          const container = document.getElementById('activities');
+          container.innerHTML = '';
+
+          Object.entries(data).forEach(([name, a]) => {
+            const participants = Array.isArray(a.participants) ? a.participants : [];
+            const participantsHtml = participants.length
+              ? '<ul>' + participants.map(p => `<li>${esc(p)}</li>`).join('') + '</ul>'
+              : '<p class="muted">No participants yet</p>';
+
+            const card = document.createElement('article');
+            card.className = 'card';
+            card.innerHTML = `
+              <div class="card-head">
+                <h3 class="title">${esc(name)}</h3>
+                <span class="badge">${participants.length}</span>
+              </div>
+              <p class="desc">${esc(a.description)}</p>
+              <p class="schedule"><strong>Schedule:</strong> ${esc(a.schedule)}</p>
+              <div class="participants">
+                <h4>Participants</h4>
+                ${participantsHtml}
+              </div>
+            `;
+            container.appendChild(card);
+          });
+        }catch(err){
+          const container = document.getElementById('activities');
+          container.innerHTML = '<p class="error">Could not load activities.</p>';
+          console.error(err);
+        }
+      }
+
+      window.addEventListener('DOMContentLoaded', loadActivities);
+    </script>
   </body>
 </html>
