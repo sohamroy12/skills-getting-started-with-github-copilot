@@ -12,6 +12,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Clear loading message
       activitiesList.innerHTML = "";
+      // Reset activity select (keep a default placeholder)
+      activitySelect.innerHTML = '<option value="">-- Select an activity --</option>';
 
       // Populate activities list
       Object.entries(activities).forEach(([name, details]) => {
@@ -27,12 +29,14 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
           <p class="activity-desc">${esc(details.description)}</p>
           <p class="activity-schedule"><strong>Schedule:</strong> ${esc(details.schedule)}</p>
-          <section class="activity-participants">
-            <h4 class="participants-heading">Participants</h4>
-            ${participantsHtml(details.participants)}
-          </section>
+              <section class="activity-participants">
+                <h4 class="participants-heading">Participants</h4>
+                ${participantsHtml(details.participants)}
+              </section>
         `;
 
+            // attach activity name for event delegation and updates
+            activityCard.dataset.activityName = name;
         activitiesList.appendChild(activityCard);
 
         // Add option to select dropdown
@@ -68,6 +72,8 @@ document.addEventListener("DOMContentLoaded", () => {
         messageDiv.textContent = result.message;
         messageDiv.className = "success";
         signupForm.reset();
+        // Refresh activities UI so the newly signed-up participant appears
+        fetchActivities();
       } else {
         messageDiv.textContent = result.detail || "An error occurred";
         messageDiv.className = "error";
@@ -101,9 +107,57 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function participantsHtml(participants) {
-    const escapedParticipants = participants.map(p => esc(p));
-    return escapedParticipants.length
-      ? '<ul class="participants-list">' + escapedParticipants.map(p => `<li>${p}</li>`).join('') + '</ul>'
-      : '<div class="participants-empty">No participants yet</div>';
+    if (!participants || !participants.length) return '<div class="participants-empty">No participants yet</div>';
+
+    return '<ul class="participants-list">' + participants.map(p => {
+      // display escaped text, but store URL-encoded raw email in data attribute
+      const disp = esc(p);
+      const encoded = encodeURIComponent(p);
+      return `<li><span class="participant-email">${disp}</span><button class="participant-remove" data-email="${encoded}" aria-label="Remove ${disp}">🗑️</button></li>`;
+    }).join('') + '</ul>';
   }
+
+  // Event delegation for participant remove buttons
+  activitiesList.addEventListener('click', async (ev) => {
+    const btn = ev.target.closest && ev.target.closest('.participant-remove');
+    if (!btn) return;
+
+    const encodedEmail = btn.getAttribute('data-email');
+    const email = decodeURIComponent(encodedEmail || '');
+    const card = btn.closest('.activity-card');
+    const activityName = card && card.dataset && card.dataset.activityName;
+    if (!activityName || !email) return;
+
+    if (!confirm(`Unregister ${email} from ${activityName}?`)) return;
+
+    try {
+      const resp = await fetch(`/activities/${encodeURIComponent(activityName)}/participants?email=${encodeURIComponent(email)}`, { method: 'DELETE' });
+      const result = await resp.json();
+      if (resp.ok) {
+        // remove the list item from DOM
+        const li = btn.closest('li');
+        if (li) li.remove();
+
+        // update count badge if present
+        const countBadge = card.querySelector('.activity-count');
+        if (countBadge) {
+          const cur = parseInt(countBadge.textContent || '0', 10);
+          countBadge.textContent = String(Math.max(0, cur - 1));
+        }
+
+        messageDiv.textContent = result.message || 'Unregistered';
+        messageDiv.className = 'success';
+      } else {
+        messageDiv.textContent = result.detail || 'Failed to unregister';
+        messageDiv.className = 'error';
+      }
+    } catch (err) {
+      console.error('Error unregistering:', err);
+      messageDiv.textContent = 'Failed to unregister. Please try again.';
+      messageDiv.className = 'error';
+    }
+
+    messageDiv.classList.remove('hidden');
+    setTimeout(() => messageDiv.classList.add('hidden'), 5000);
+  });
 });
